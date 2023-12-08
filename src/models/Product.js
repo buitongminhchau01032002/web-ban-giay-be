@@ -13,6 +13,13 @@ const ProductSchema = new Schema(
             type: String,
             required: true,
         },
+        description: {
+            type: String,
+            required: true,
+        },
+        importPrice: {
+            type: Number,
+        },
         price: {
             type: Number,
         },
@@ -20,19 +27,29 @@ const ProductSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'product_types',
         },
-        quantity: {
-            type: Number,
-            required: true,
-            default: 1,
-        },
-        image: {
+        images: [
+            {
+                type: String,
+            },
+        ],
+        status: {
             type: String,
+            enum: ['active', 'inactive'],
+            default: 'active',
         },
     },
     {
         timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
     }
 );
+
+ProductSchema.virtual('sizes', {
+    ref: 'product_sizes',
+    localField: '_id',
+    foreignField: 'product',
+});
 
 ProductSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' });
 ProductSchema.plugin(AutoIncrement, { id: 'products', inc_field: 'id' });

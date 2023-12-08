@@ -4,7 +4,7 @@ const ProductType = require('../models/ProductType');
 const read = async (req, res, next) => {
     try {
         let productTypes;
-        productTypes = await ProductType.aggregate([{ $match: req.filters }, { $sort: req.sorts }]);
+        productTypes = await ProductType.find();
         return res.status(200).json({ success: true, productTypes });
     } catch (err) {
         console.log(err);

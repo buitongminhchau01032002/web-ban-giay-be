@@ -10,6 +10,7 @@ const role = require('./role');
 const auth = require('./auth');
 const func = require('./function');
 const upload = require('./upload');
+const productSize = require('./productSize');
 
 router.use('/product', productRoute);
 router.use('/product-type', productTypeRoute);
@@ -21,5 +22,6 @@ router.use('/role', role);
 router.use('/auth', auth);
 router.use('/function', func);
 router.use('/upload', upload);
+router.use('/product-size', productSize);
 
 module.exports = router;

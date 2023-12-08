@@ -1,67 +1,55 @@
-const QueryString = require('qs');
 const Product = require('../models/Product');
-const imageToolkit = require('../utils/imageToolkit');
+const ProductSize = require('../models/ProductSize');
 
 // [GET] api/product
 const read = async (req, res, next) => {
     try {
-        let products;
-        products = await Product.aggregate([
-            {
-                $lookup: {
-                    from: 'product_types',
-                    localField: 'type',
-                    foreignField: '_id',
-                    as: 'type',
-                },
-            },
-            {
-                $unwind: '$type',
-            },
-            { $match: req.filters },
-            { $sort: req.sorts },
-        ]);
+        const products = await Product.find().populate('type').populate('sizes');
         return res.status(200).json({ success: true, products });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
 // [POST] api/product
 const create = async (req, res, next) => {
-    const { name, price, type, quantity, image } = req.body;
+    const { name, description, importPrice, price, type, images, sizes, status } = req.body;
     // Validate field
-    if (!name || !price || !type) {
+    if (!name || !description || !importPrice || !price || !type || !images) {
         return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
-    }
-
-    // upload image
-    let imageResult;
-    if (image) {
-        try {
-            imageResult = await imageToolkit.upload(image);
-            if (!imageResult) {
-                return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
-            }
-        } catch (err) {
-            return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
-        }
     }
 
     try {
         const newProduct = new Product({
             name,
+            description,
+            importPrice,
             price,
             type,
-            quantity,
-            image: image && imageResult.secure_url,
+            images,
+            status,
         });
         await newProduct.save();
+
+        if (sizes && sizes?.length > 0) {
+            sizes.forEach(async (s) => {
+                const newSize = new ProductSize({
+                    product: newProduct.toObject()._id,
+                    size: s,
+                });
+                await newSize.save();
+            });
+        }
+
         return res.status(201).json({ success: true, product: newProduct });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
@@ -69,12 +57,13 @@ const create = async (req, res, next) => {
 const readOne = async (req, res, next) => {
     const id = req.params.id;
     try {
-        let product;
-        product = await Product.findOne({ id }).populate('type');
+        const product = await Product.findOne({ id }).populate('type').populate('sizes');
         return res.status(200).json({ success: true, product });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
@@ -90,22 +79,6 @@ const update = async (req, res, next) => {
         }
     });
 
-    // Upload image
-    if (updateObj.image) {
-        let imageResult;
-        try {
-            imageResult = await imageToolkit.upload(updateObj.image);
-            if (!imageResult) {
-                console.log(err);
-                return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
-            }
-        } catch (err) {
-            console.log(err);
-            return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
-        }
-        updateObj.image = imageResult.secure_url || 'https://picsum.photos/200/300';
-    }
-
     // Update product
     try {
         const newProduct = await Product.findOneAndUpdate({ id }, updateObj, {
@@ -114,7 +87,9 @@ const update = async (req, res, next) => {
         return res.status(200).json({ success: true, product: newProduct });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
@@ -129,7 +104,9 @@ const destroy = async (req, res, next) => {
         return res.status(200).json({ success: true });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
