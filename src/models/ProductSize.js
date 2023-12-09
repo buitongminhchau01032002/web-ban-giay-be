@@ -22,6 +22,10 @@ const ProductSizeSchema = new Schema(
             type: Number,
             default: 0,
         },
+        saledQuantity: {
+            type: Number,
+            default: 0,
+        },
     },
     {
         timestamps: true,
