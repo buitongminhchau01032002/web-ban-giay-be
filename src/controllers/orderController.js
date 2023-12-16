@@ -176,7 +176,14 @@ const readOne = async (req, res, next) => {
     try {
         let order;
         order = await Order.findOne({ id }).populate('customer');
-        return res.status(200).json({ success: true, order });
+        const details = await DetailOrder.find({ order: order.toObject()._id }).populate({
+            path: 'productSize',
+            populate: {
+                path: 'product',
+            },
+        });
+
+        return res.status(200).json({ success: true, order: { ...order.toObject(), details } });
     } catch (err) {
         console.log(err);
         return res
