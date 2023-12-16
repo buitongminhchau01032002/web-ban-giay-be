@@ -2,30 +2,19 @@ const Customer = require('../models/Customer');
 const DetailOrder = require('../models/DetailOrder');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const ProductSize = require('../models/ProductSize');
 
 // [GET] api/order
 const read = async (req, res, next) => {
     try {
         let orders;
-        orders = await Order.aggregate([
-            {
-                $lookup: {
-                    from: 'customers',
-                    localField: 'customer',
-                    foreignField: '_id',
-                    as: 'customer',
-                },
-            },
-            {
-                $unwind: '$customer',
-            },
-            { $match: req.filters },
-            { $sort: req.sorts },
-        ]);
+        orders = await Order.find();
         return res.status(200).json({ success: true, orders });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
@@ -58,27 +47,29 @@ const createDetail = ({ orderObject, detailObjs }) => {
             .catch(() => reject());
     });
 };
-// Create detail
+
 const updateProductQuantity = (detailObjs) => {
     const updateQuantityPromises = [];
 
     detailObjs.forEach((detailObj) => {
         const updatePromise = new Promise(async (resolve, reject) => {
             try {
-                const product = await Product.findById(detailObj.product);
-                let newQuanity = product.toObject().quantity - detailObj.quantity;
+                const productSize = await ProductSize.findById(detailObj.productSize);
+                let newQuanity = productSize.toObject().quantity - detailObj.quantity;
                 if (newQuanity < 0) {
                     newQuanity = 0;
                 }
 
-                const newProduct = await Product.findOneAndUpdate(
-                    { _id: detailObj.product },
-                    { quantity: newQuanity },
+                let newSaledQuanity = productSize.toObject().quantity + detailObj.quantity;
+
+                const newProductSize = await ProductSize.findOneAndUpdate(
+                    { _id: detailObj.productSize },
+                    { quantity: newQuanity, saledQuantity: newSaledQuanity },
                     {
                         new: true,
                     }
                 );
-                resolve(newProduct);
+                resolve(newProductSize);
             } catch (error) {
                 console.log(error);
                 reject();
@@ -97,36 +88,31 @@ const updateProductQuantity = (detailObjs) => {
 
 // [POST] api/order
 const create = async (req, res, next) => {
-    const { customer, status, details, receivedMoney, totalPrice, exchangeMoney, discount } = req.body;
+    const {
+        customerId,
+        deliveryStatus,
+        paymentStatus,
+        details,
+        receivedMoney,
+        totalPrice,
+        exchangeMoney,
+        phone,
+        address,
+    } = req.body;
 
     // Validate field
-    if (!customer || !receivedMoney || !totalPrice || !exchangeMoney) {
+    if (!totalPrice) {
         return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
     }
 
     // Check and create customer
-    const customerInDB = await Customer.findById(customer._id);
-    let customerId;
-    if (customerInDB) {
-        // Have customer in db
-        customerId = customerInDB._id;
+    if (customerId) {
+        // set phone, address....
     } else {
         //Don't have customer in db
-        if (!customer.name || !customer.address || !customer.phone) {
-            return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
-        }
-        try {
-            const newCustomer = new Customer({
-                name: customer.name,
-                address: customer.address,
-                phone: customer.phone,
-            });
-            await newCustomer.save();
-            customerId = newCustomer._id;
-        } catch (err) {
-            console.log(err);
-            return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
-        }
+        // if (!phone || !address) {
+        //     return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
+        // }
     }
 
     // Create order
@@ -134,16 +120,20 @@ const create = async (req, res, next) => {
     try {
         newOrder = new Order({
             customer: customerId,
-            status: status || 'pending',
+            deliveryStatus: deliveryStatus || 'pending',
+            paymentStatus: paymentStatus || 'paid',
             receivedMoney,
             totalPrice,
             exchangeMoney,
-            discount,
+            address,
+            phone,
         });
         await newOrder.save();
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 
     // Create detail order
@@ -152,7 +142,9 @@ const create = async (req, res, next) => {
         newDetailOrders = await createDetail({ orderObject: newOrder, detailObjs: details });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 
     // update quantity
@@ -160,7 +152,9 @@ const create = async (req, res, next) => {
         await updateProductQuantity(details);
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 
     // Get order and response
@@ -185,7 +179,9 @@ const readOne = async (req, res, next) => {
         return res.status(200).json({ success: true, order });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
@@ -209,7 +205,9 @@ const update = async (req, res, next) => {
         return res.status(200).json({ success: true, order: newOrder });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 
@@ -224,7 +222,9 @@ const destroy = async (req, res, next) => {
         return res.status(200).json({ success: true });
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ success: false, status: 500, message: 'Internal server error' });
+        return res
+            .status(500)
+            .json({ success: false, status: 500, message: 'Internal server error' });
     }
 };
 

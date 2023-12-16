@@ -13,9 +13,9 @@ const DetailOrderSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'orders',
         },
-        product: {
+        productSize: {
             type: Schema.Types.ObjectId,
-            ref: 'products',
+            ref: 'product_sizes',
         },
         quantity: {
             type: Number,

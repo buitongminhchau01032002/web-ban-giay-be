@@ -12,6 +12,7 @@ const OrderSchema = new Schema(
         customer: {
             type: Schema.Types.ObjectId,
             ref: 'customers',
+            require: false,
         },
         totalPrice: {
             type: Number,
@@ -22,12 +23,19 @@ const OrderSchema = new Schema(
         exchangeMoney: {
             type: Number,
         },
-        discount: {
-            type: Number,
-        },
-        status: {
+        deliveryStatus: {
             type: String,
             enum: ['pending', 'delivered', 'aborted'],
+        },
+        paymentStatus: {
+            type: String,
+            enum: ['unpaid', 'paid'],
+        },
+        phone: {
+            type: String,
+        },
+        address: {
+            type: String,
         },
     },
     {
