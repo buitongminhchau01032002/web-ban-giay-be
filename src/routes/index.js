@@ -11,6 +11,7 @@ const auth = require('./auth');
 const func = require('./function');
 const upload = require('./upload');
 const productSize = require('./productSize');
+const _import = require('./import');
 
 router.use('/product', productRoute);
 router.use('/product-type', productTypeRoute);
@@ -23,5 +24,6 @@ router.use('/auth', auth);
 router.use('/function', func);
 router.use('/upload', upload);
 router.use('/product-size', productSize);
+router.use('/import', _import);
 
 module.exports = router;
