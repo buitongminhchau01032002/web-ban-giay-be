@@ -45,6 +45,12 @@ const ProductSchema = new Schema(
     }
 );
 
+ProductSchema.virtual('ratings', {
+    ref: 'ratings',
+    localField: '_id',
+    foreignField: 'product',
+});
+
 ProductSchema.virtual('sizes', {
     ref: 'product_sizes',
     localField: '_id',

@@ -4,7 +4,10 @@ const ProductSize = require('../models/ProductSize');
 // [GET] api/product
 const read = async (req, res, next) => {
     try {
-        const products = await Product.find().populate('type').populate('sizes');
+        const products = await Product.find()
+            .populate('type')
+            .populate('sizes')
+            .populate('ratings');
         return res.status(200).json({ success: true, products });
     } catch (err) {
         console.log(err);
@@ -57,7 +60,15 @@ const create = async (req, res, next) => {
 const readOne = async (req, res, next) => {
     const id = req.params.id;
     try {
-        const product = await Product.findOne({ id }).populate('type').populate('sizes');
+        const product = await Product.findOne({ id })
+            .populate('type')
+            .populate('sizes')
+            .populate({
+                path: 'ratings',
+                populate: {
+                    path: 'customer',
+                },
+            });
         return res.status(200).json({ success: true, product });
     } catch (err) {
         console.log(err);

@@ -1,11 +1,11 @@
-const Role = require('../models/Role');
+const Rating = require('../models/Rating');
 
-// [GET] api/role
+// [GET] api/rating
 const read = async (req, res, next) => {
     try {
-        let roles;
-        roles = await Role.find();
-        return res.status(200).json({ success: true, roles });
+        let ratings;
+        ratings = await Rating.find();
+        return res.status(200).json({ success: true, ratings });
     } catch (err) {
         console.log(err);
         return res
@@ -14,22 +14,33 @@ const read = async (req, res, next) => {
     }
 };
 
-// [POST] api/role
+// [POST] api/rating
 const create = async (req, res, next) => {
-    const { name, description, functions } = req.body;
+    const { product, customer, score, commnent } = req.body;
     // Validate field
-    if (!name) {
+    if (!product || !customer || !score) {
         return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
     }
 
+    if (score < 1 || score > 5) {
+        return res.status(400).json({ success: false, status: 400, message: 'Score invalid' });
+    }
+
+    // Check has rating
+    const existRating = await Rating.findOne({ product, customer });
+    if (existRating) {
+        return res.status(400).json({ success: false, status: 400, message: 'Rating existed' });
+    }
+
     try {
-        const role = new Role({
-            name,
-            description,
-            functions,
+        const rating = new Rating({
+            product,
+            customer,
+            score,
+            commnent,
         });
-        await role.save();
-        return res.status(201).json({ success: true, role });
+        await rating.save();
+        return res.status(201).json({ success: true, rating });
     } catch (err) {
         console.log(err);
         return res
@@ -38,14 +49,14 @@ const create = async (req, res, next) => {
     }
 };
 
-// [GET] api/role/:id
+// [GET] api/rating/:id
 const readOne = async (req, res, next) => {
     const id = req.params.id;
     try {
-        let role;
-        role = await Role.findOne({ id });
+        let rating;
+        rating = await Rating.findOne({ id });
 
-        return res.status(200).json({ success: true, role });
+        return res.status(200).json({ success: true, rating });
     } catch (err) {
         console.log(err);
         return res
@@ -54,29 +65,26 @@ const readOne = async (req, res, next) => {
     }
 };
 
-// [PUT] api/role/:id
+// [PUT] api/rating/:id
 const update = async (req, res, next) => {
     const id = Number(req.params.id);
-    const { name, description, functions } = req.body;
+    const { score, commnent } = req.body;
 
     const updateObj = {};
-    if (name) {
-        updateObj.name = name;
+    if (score) {
+        updateObj.score = score;
     }
-    if (description) {
-        updateObj.description = description;
-    }
-    if (functions) {
-        updateObj.functions = functions;
+    if (commnent) {
+        updateObj.commnent = commnent;
     }
 
-    // Update role
+    // Update rating
     try {
-        const role = await Role.findOneAndUpdate({ id }, updateObj, {
+        const rating = await Rating.findOneAndUpdate({ id }, updateObj, {
             new: true,
         });
 
-        return res.status(200).json({ success: true, role });
+        return res.status(200).json({ success: true, rating });
     } catch (err) {
         console.log(err);
         return res
@@ -85,14 +93,14 @@ const update = async (req, res, next) => {
     }
 };
 
-// [DELETE] api/role/:id
+// [DELETE] api/rating/:id
 const destroy = async (req, res, next) => {
     if (!req.params.id) {
         return res.status(400).json({ success: false, status: 400, message: 'Missed id' });
     }
 
     try {
-        await Role.delete({ id: req.params.id });
+        await Rating.delete({ id: req.params.id });
         return res.status(200).json({ success: true });
     } catch (err) {
         console.log(err);

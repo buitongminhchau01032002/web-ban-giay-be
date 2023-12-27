@@ -14,7 +14,15 @@ const OrderSchema = new Schema(
             ref: 'customers',
             require: false,
         },
+        coupon: {
+            type: Schema.Types.ObjectId,
+            ref: 'coupons',
+            require: false,
+        },
         totalPrice: {
+            type: Number,
+        },
+        intoMoney: {
             type: Number,
         },
         receivedMoney: {
@@ -40,8 +48,16 @@ const OrderSchema = new Schema(
     },
     {
         timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
     }
 );
+
+OrderSchema.virtual('details', {
+    ref: 'detail_orders',
+    localField: '_id',
+    foreignField: 'order',
+});
 
 OrderSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' });
 OrderSchema.plugin(AutoIncrement, { id: 'orders', inc_field: 'id' });

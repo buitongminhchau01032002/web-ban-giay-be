@@ -60,7 +60,7 @@ const updateProductQuantity = (detailObjs) => {
                     newQuanity = 0;
                 }
 
-                let newSaledQuanity = productSize.toObject().quantity + detailObj.quantity;
+                let newSaledQuanity = productSize.toObject().saledQuantity + detailObj.quantity;
 
                 const newProductSize = await ProductSize.findOneAndUpdate(
                     { _id: detailObj.productSize },
@@ -90,29 +90,21 @@ const updateProductQuantity = (detailObjs) => {
 const create = async (req, res, next) => {
     const {
         customerId,
+        coupon,
         deliveryStatus,
         paymentStatus,
         details,
         receivedMoney,
         totalPrice,
+        intoMoney,
         exchangeMoney,
         phone,
         address,
     } = req.body;
 
     // Validate field
-    if (!totalPrice) {
+    if (!totalPrice || !intoMoney) {
         return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
-    }
-
-    // Check and create customer
-    if (customerId) {
-        // set phone, address....
-    } else {
-        //Don't have customer in db
-        // if (!phone || !address) {
-        //     return res.status(400).json({ success: false, status: 400, message: 'Missed field' });
-        // }
     }
 
     // Create order
@@ -124,9 +116,11 @@ const create = async (req, res, next) => {
             paymentStatus: paymentStatus || 'paid',
             receivedMoney,
             totalPrice,
+            intoMoney,
             exchangeMoney,
             address,
             phone,
+            coupon,
         });
         await newOrder.save();
     } catch (err) {
@@ -175,15 +169,20 @@ const readOne = async (req, res, next) => {
     const id = req.params.id;
     try {
         let order;
-        order = await Order.findOne({ id }).populate('customer');
-        const details = await DetailOrder.find({ order: order.toObject()._id }).populate({
-            path: 'productSize',
-            populate: {
-                path: 'product',
-            },
-        });
+        order = await Order.findOne({ id })
+            .populate('customer')
+            .populate('coupon')
+            .populate({
+                path: 'details',
+                populate: {
+                    path: 'productSize',
+                    populate: {
+                        path: 'product',
+                    },
+                },
+            });
 
-        return res.status(200).json({ success: true, order: { ...order.toObject(), details } });
+        return res.status(200).json({ success: true, order: { ...order.toObject() } });
     } catch (err) {
         console.log(err);
         return res

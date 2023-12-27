@@ -5,7 +5,12 @@ const DetailOrder = require('../models/DetailOrder');
 const read = async (req, res, next) => {
     try {
         let detailOrders;
-        detailOrders = await DetailOrder.find();
+        detailOrders = await DetailOrder.find().populate({
+            path: 'productSize',
+            populate: {
+                path: 'product',
+            },
+        });
         return res.status(200).json({ success: true, detailOrders });
     } catch (err) {
         console.log(err);

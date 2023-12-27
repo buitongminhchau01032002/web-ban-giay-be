@@ -18,8 +18,16 @@ const ImportSchema = new Schema(
     },
     {
         timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
     }
 );
+
+ImportSchema.virtual('details', {
+    ref: 'detail_imports',
+    localField: '_id',
+    foreignField: 'import',
+});
 
 ImportSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' });
 ImportSchema.plugin(AutoIncrement, { id: 'imports', inc_field: 'id' });
