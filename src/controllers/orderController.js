@@ -178,6 +178,9 @@ const readOne = async (req, res, next) => {
                     path: 'productSize',
                     populate: {
                         path: 'product',
+                        populate: {
+                            path: 'type',
+                        }
                     },
                 },
             });

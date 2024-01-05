@@ -9,6 +9,9 @@ const read = async (req, res, next) => {
             path: 'productSize',
             populate: {
                 path: 'product',
+                populate: {
+                    path: 'type',
+                }
             },
         });
         return res.status(200).json({ success: true, detailOrders });
